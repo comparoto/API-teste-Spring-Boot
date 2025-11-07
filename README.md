@@ -5,6 +5,7 @@
 - Packages e classes adicionados manualmente:
     - config
         - ApplicationConfig.java
+        - DevSecurityConfig.java
         - SecurityConfig.java
         - WebConfig.java
     - controller
