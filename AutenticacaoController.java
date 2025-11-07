@@ -3,47 +3,52 @@ package com.protegeagro.protege_agro_api.controller;
 import com.protegeagro.protege_agro_api.dto.CadastroRequestDTO;
 import com.protegeagro.protege_agro_api.dto.LoginRequestDTO;
 import com.protegeagro.protege_agro_api.model.Usuario;
-import com.protegeagro.protege_agro_api.service.AutenticacaoService;
-import org.springframework.http.HttpStatus;
+import com.protegeagro.protege_agro_api.repository.UsuarioRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/auth" )
 public class AutenticacaoController {
 
-    private final AutenticacaoService autenticacaoService;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AutenticacaoController(AutenticacaoService autenticacaoService) {
-        this.autenticacaoService = autenticacaoService;
+    public AutenticacaoController(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequestDTO loginRequest) {
-        boolean autenticado = autenticacaoService.autenticar(loginRequest);
-        if (autenticado) {
-            return ResponseEntity.ok("Login bem-sucedido!");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha inválidos.");
-        }
+    public ResponseEntity<?> autenticar(@RequestBody LoginRequestDTO loginRequest) {
+
+        return ResponseEntity.ok("Login endpoint hit");
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registrar(@RequestBody CadastroRequestDTO request) {
         try {
-            Usuario novoUsuario = autenticacaoService.registrar(request);
-            novoUsuario.setSenha(null);
-            return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
+            if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
 
-        } catch (RuntimeException e) {
+                return ResponseEntity.badRequest().body("O e-mail " + request.getEmail() + " já está cadastrado.");
+            }
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage()));
+            Usuario novoUsuario = new Usuario();
+            novoUsuario.setEmail(request.getEmail());
+            novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
+            novoUsuario.setTelefone(request.getTelefone());
+            novoUsuario.setEstado(request.getEstado());
+            novoUsuario.setRegiao(request.getRegiao());
+            novoUsuario.setCultivo(request.getCultivo());
+
+            Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
+
+            return ResponseEntity.status(201).body(usuarioSalvo);
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(500).body("Erro ao registrar usuário: " + e.getMessage());
         }
     }
 }
