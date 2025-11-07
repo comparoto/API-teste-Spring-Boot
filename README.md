@@ -1,6 +1,6 @@
 # Estrutura dos arquivos 
 
-![estrutura](png)
+![estrutura](estruturajava.png)
 
 - Packages e classes adicionados manualmente:
     - config
